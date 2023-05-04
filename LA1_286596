@@ -1,0 +1,145 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:fluttertoast/fluttertoast.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Information of Country',
+      theme: ThemeData(primarySwatch: Colors.blueGrey),
+      home: const MyHomePage(title: 'Information of Country'),
+    );
+  }
+}
+
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({Key? key, required this.title}) : super(key: key);
+
+  final String title;
+
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  String selectLoc = "Malaysia";
+  List<String> locList = [
+    "Thailand",
+    "China",
+    "Malaysia",
+    "Singapore",
+    "Vietnam",
+    "Indonesia",
+    "India",
+  ];
+  String desc = "No Data";
+  double surfaceArea = 0.0;
+  String capital = '';
+  String region = '';
+  String iso2 = '';
+  String apiKey = "h35lf8nb7AcZx+EoB9LWcw==gYlJ2mS5cvhnEUbv";
+  String countryImageUrl = "https://flagsapi.com/AD/flat/64.png";
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+      ),
+      body: Container(
+        padding: const EdgeInsets.only(top: 20.0),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              const Text(
+                "Simple information of the country",
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              Image.network(
+                countryImageUrl,
+                height: 100,
+                width: 150,
+                fit: BoxFit.fill,
+              ),
+              DropdownButton(
+                itemHeight: 60,
+                value: selectLoc,
+                onChanged: (newValue) {
+                  setState(() {
+                    selectLoc = newValue.toString();
+                    countryImageUrl =
+                        "https://flagsapi.com/AD/flat/64.png"; // avoid clear  image
+                  });
+                },
+                items: locList.map((selectLoc) {
+                  return DropdownMenuItem(
+                    value: selectLoc,
+                    child: Text(
+                      selectLoc,
+                    ),
+                  );
+                }).toList(),
+              ),
+              ElevatedButton(
+                onPressed: _information,
+                child: const Text("Load information"),
+              ),
+              Text(
+                desc,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _information() async {
+    Fluttertoast.showToast(
+        msg: "Loading...",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        backgroundColor: Colors.grey,
+        textColor: Colors.white);
+
+    Uri url =
+        Uri.parse('https://api.api-ninjas.com/v1/country?name=$selectLoc');
+    var apiKey = "h35lf8nb7AcZx+EoB9LWcw==gYlJ2mS5cvhnEUbv";
+    var response = await http.get(url, headers: {'X-Api-Key': apiKey});
+    var rescode = response.statusCode;
+    if (rescode == 200) {
+      var jsonData = response.body;
+      var parsedJson = json.decode(jsonData);
+      print(jsonData);
+      print(parsedJson);
+      setState(() {
+        capital = parsedJson[0]['capital'];
+        region = parsedJson[0]['region'];
+        surfaceArea = double.parse(parsedJson[0]['surface_area'].toString());
+        iso2 = (parsedJson[0]['iso2'].toString());
+        countryImageUrl = "https://flagsapi.com/$iso2/flat/64.png";
+        desc =
+            "The  Capital of $selectLoc ($iso2) is $capital and the region is $region; The total surface area of $iso2 is $surfaceArea sq km;   ";
+      });
+    } else {
+      setState(() {
+        desc = "No Information is available";
+      });
+    }
+
+    Fluttertoast.cancel();
+  }
+}
